@@ -4,6 +4,8 @@ import os
 import shutil
 import sys
 import zipfile
+import mmap
+import re
 from lxml import etree
 
 ZIP = '.zip'
@@ -66,6 +68,12 @@ class ExcelFile():
             sheet_count += 1
             (f'Worksheet {sheet_count} unprotected...')
 
+    def unprotect_vbaproject(self):
+        vba = VbaProject(self.vbaproject_file)
+        vba.remove_protection()
+        print('VBA Project unprotected...')
+        # TODO: Add instructions for opening the file and really unprotect
+
     def repackage(self):
         filepaths = _get_file_listing(self.unpacked_folderpath)
         with zipfile.ZipFile(self.zipped_filepath,'w') as repackaged_zip:
@@ -110,6 +118,15 @@ class WorksheetXML():
 
         tree.write(self.filepath, encoding='UTF-8', xml_declaration=True)
 
+class VbaProject():
+    def __init__(self, filepath):
+        self.filepath = filepath
+
+    def remove_protection(self):
+        with open(self.filepath, 'r+b') as f:
+            m = mmap.mmap(f.fileno(), 0)
+            m[:] = re.sub(b'DPB', b'DPx', m[:])
+
 def _get_file_listing(folder):
         filepaths = []
         for root, folder, files in os.walk(folder): 
@@ -120,17 +137,19 @@ def _get_file_listing(folder):
         return filepaths
         
 def Main():
-    parser = argparse.ArgumentParser(description='Remove Workbook and Worksheet protection on Microsoft Excel files.')
+    parser = argparse.ArgumentParser(description='Remove Workbook, Worksheet and VBA Project protection on Microsoft Excel files.')
     parser.add_argument('file', help='Filepath of the Excel file to be unlocked')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-ws', '--worksheet', action='store_true', 
                         help='unlocks the Worksheets only (leaves Workbook Protection intact)')
     group.add_argument('-wb', '--workbook', action='store_true',
                         help='unlocks the Workbook only (leaves Worksheet Protection intact)')
+    group.add_argument('-vba', '--vbaproject', action='store_true',
+                        help='unlocks the VBAProject only (leaves Worksheet and Workbook Protection intact)')
     parser.add_argument('--no_backup', action='store_true',
                         help='runs craXcel without making a backup of the original (use at own risk)')
     parser.add_argument('--debug', action='store_true',
-                        help=f'retains the {TEMP_DIR} folder. Useful for dubugging exceptions')                        
+                        help=f'retains the {TEMP_DIR} folder. Useful for debugging exceptions')                        
     args = parser.parse_args()
 
     print('\nStarting craXcel...')
@@ -175,6 +194,13 @@ def Main():
                 print(e)
                 if args.debug == False:
                     cxl.cleanup()
+        elif args.vbaproject:
+            try:
+                cxl.unprotect_vbaproject()
+            except Exception as e:
+                print(e)
+                if not args.debug:
+                    cxl.cleanup()
         else:
             try:
                 cxl.unprotect_worksheets()
@@ -182,6 +208,10 @@ def Main():
                 print(e)
             try:                
                 cxl.unprotect_workbook()
+            except Exception as e:
+                print(e)                      
+            try:                
+                cxl.unprotect_vbaproject()
             except Exception as e:
                 print(e)                      
 
