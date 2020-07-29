@@ -13,16 +13,18 @@ WORKBOOK_REL = '/xl/workbook.xml'
 WORKSHEETS_REL = '/xl/worksheets/'
 WORKBOOK_TAG = 'workbookProtection'
 WORKSHEET_TAG = 'sheetProtection'
+VBAPROJECT_REL = '/xl/vbaProject.bin'
 
 class ExcelFile():
     def __init__(self,filepath):
-        self.filepath = filepath
-        self.folderpath = os.path.dirname(filepath)
-        self.extension = os.path.splitext(filepath)[1]
+        self.filepath = os.path.abspath(filepath)
+        self.folderpath = os.path.dirname(self.filepath)
+        self.extension = os.path.splitext(self.filepath)[1]
         self.unpacked_folderpath = self.folderpath + TEMP_DIR
         self.zipped_filepath = self.filepath.replace(self.extension, ZIP)
         self.workbook_xml = self.unpacked_folderpath + WORKBOOK_REL
         self.worksheet_folder = self.unpacked_folderpath + WORKSHEETS_REL
+        self.vbaproject_file = self.unpacked_folderpath + VBAPROJECT_REL
 
     def _get_backup_filepath(self,backup_suffix=BACKUP_EXT):
         backup_ext = backup_suffix + self.extension
