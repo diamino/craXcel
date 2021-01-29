@@ -66,14 +66,21 @@ class ExcelFile():
             ws = WorksheetXML(ws_file)
             ws._remove_protection_element()
             sheet_count += 1
-            (f'Worksheet {sheet_count} unprotected...')
+            print(f'Worksheet {sheet_count} unprotected...')
 
     def unprotect_vbaproject(self):
         vba = VbaProject(self.vbaproject_file)
         vba.remove_protection()
-        print('VBA Project unprotected...')
-        # TODO: Add instructions for opening the file and really unprotect
-
+        print("VBA Project 'unprotected'...")
+        print("   NB. Some extra (manual) steps are necessary to really remove the protection:")
+        print("   1. Open the file in Excel")
+        print("   2. Click 'Yes' to repair the file")
+        print("   3. Open the VBA editor (ignore warnings)")
+        print("   4. In the VBA project properties set a simple password (do not remove the protecion just yet)")
+        print("   5. Save and reopen the file")
+        print("   6. Open the VBA editor and remove the protection (using the simple password from step 4)")
+        print("   7. Save the file. The VBA project is now unprotected")
+        
     def repackage(self):
         filepaths = _get_file_listing(self.unpacked_folderpath)
         with zipfile.ZipFile(self.zipped_filepath,'w') as repackaged_zip:
